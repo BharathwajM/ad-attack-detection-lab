@@ -1,11 +1,8 @@
-``` Detection: Pass-the-Hash (MITRE ATT&CK T1550.002)
+``` Detection: Possible pass-the-hash (MITRE ATT&CK T1550.002)
     Data: Windows Security Event 4624 (successful logon), forwarded from WS01/DC01.
-    Logic: PtH authenticates with a stolen NT hash, producing a NETWORK logon (Logon_Type=3) over
-    NTLM where the logon process is NtLmSsp. The strong lab signal is a *privileged / interactive*
-    account (here domain Administrator) arriving over NTLM type-3 from another host - in a modern
-    Kerberos-first AD, a Domain Admin logging on with NTLM to a member host is abnormal and is exactly
-    what reusing a hash looks like. Machine accounts ($) and ANONYMOUS are excluded as normal NTLM.
-    (The NT hash gives no Kerberos ticket, so the attacker is forced onto NTLM - that is the tell.) ```
+    Logic: Find type 3 NTLM logons using NtLmSsp and exclude machine, anonymous and placeholder
+    accounts. The known SMB hash-only test produced this pattern. Password-based NTLM can also
+    match. Compare source, destination and account context before escalating. ```
 index=winlogs source="WinEventLog:Security" EventCode=4624
     Logon_Type=3
     Authentication_Package=NTLM

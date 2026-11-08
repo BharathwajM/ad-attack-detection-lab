@@ -23,11 +23,18 @@ Full search + captured results for every one are in [`../evidence/`](../evidence
 **Detection fired:** `Administrator` → 102 replication accesses from a non-DC account.
 **Why it works:** only domain-controller machine accounts legitimately replicate; a user doing it is DCSync.
 
-## 4. Pass-the-Hash — T1550.002
+## 4. Possible pass-the-hash — T1550.002
 **Run (SPLUNK01, impacket):** authenticated to WS01 over SMB using **only** the recovered `Administrator` NT hash (`smbclient.py -hashes`).
 **Telemetry:** Security **4624** Logon Type 3, `Authentication_Package=NTLM`, `Logon_Process=NtLmSsp`.
 **Detection fired:** `Administrator` arriving over NTLM network logon from the attacker host.
-**Why it works:** a hash yields no Kerberos ticket, so the attacker is forced onto NTLM — a Domain Admin over NTLM to a member host is abnormal.
+**Why it matched:** the known test used an NT hash, while the event records an NTLM network logon. The search also returned other NTLM activity on DC01. Event 4624 shows the authentication package and logon type without identifying whether the client supplied a password or reused a hash.
+
+| Comparison | Event fields | What the search tells you |
+|---|---|---|
+| Captured hash-only SMB test | 4624, type 3, NTLM, `NtLmSsp`; `Administrator` on WS01 from SPLUNK01 | Matched. The test command establishes the hash-only method. |
+| Example of a legitimate password-based SMB login that falls back to NTLM (illustrative) | Same event ID, type, authentication package, and process with a named user | Would also match. The fields alone leave the credential method unverified. |
+
+To reproduce the comparison, use a known test account and a separate SMB session with a password in the isolated lab. Confirm the expected 4624 fields in Splunk. During triage, compare the account, source and destination with approved admin activity, then correlate SMB share or endpoint process activity if available.
 
 ## 5. Scheduled Task — T1053.005
 **Run (WS01, as `jsmith`):** `schtasks /create /tn ATOMIC-T1053 …`.
@@ -50,4 +57,4 @@ Building the detections surfaced real tuning work, not just copy-paste rules:
 - **Sysmon as XML had no extracted fields.** With `renderXml=1` the forwarder shipped raw XML, so `CommandLine`/`Image` never extracted and the process-creation detections were blind. I moved the process-creation detections to **Security 4688 with command-line auditing** (reliable, no add-on) and switched the forwarder to the classic format.
 - **The DCSync GUID isn't a clean field.** Splunk extracts `Properties` on 4662 as just `Control Access`; the replication GUID lives in the event body, matched with `TERM()`.
 - **Kerberos is AES by default now.** A single RC4 service ticket is high-signal, so the detection keys on encryption type rather than a noisy SPN-fan-out threshold.
-- **Pass-the-hash showed `Key_Length=128`, not 0** on this Windows build, so the rule keys on the NTLM network-logon pattern for a privileged account instead.
+- **The emulation showed `Key_Length=128`.** The rule filters NTLM network logons and excludes machine and anonymous accounts. It does not filter key length or test whether the account is privileged.

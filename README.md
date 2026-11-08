@@ -29,23 +29,23 @@ All three run on an isolated VirtualBox NAT network (`10.10.10.0/24`). Logging p
 
 ## Techniques executed & detected
 
-Each technique was run in the lab and then caught by a purpose-built Splunk search. Full write-ups and screenshots are in [`docs/`](docs/); the searches are in [`detections/`](detections/).
+The lab walkthrough links each attack to its telemetry and Splunk search. See the [walkthrough](docs/walkthrough.md), [captured search results](evidence/), and [SPL](detections/).
 
 | # | Technique | ATT&CK ID | Run from | Primary data source | Detection logic |
 |---|-----------|-----------|----------|--------------------|-----------------|
-| 1 | Kerberoasting | [T1558.003](https://attack.mitre.org/techniques/T1558/003/) | WS01 | Security 4769 | One account, many SPNs, **RC4** tickets (0x17) |
+| 1 | Kerberoasting | [T1558.003](https://attack.mitre.org/techniques/T1558/003/) | WS01 | Security 4769 | **RC4** service tickets (0x17) |
 | 2 | Password Spraying | [T1110.003](https://attack.mitre.org/techniques/T1110/003/) | WS01 | Security 4625 | One source → many accounts, short window |
 | 3 | DCSync | [T1003.006](https://attack.mitre.org/techniques/T1003/006/) | SPLUNK01 (impacket) | Security 4662 | Replication rights by a **non-DC** account |
-| 4 | Pass-the-Hash | [T1550.002](https://attack.mitre.org/techniques/T1550/002/) | SPLUNK01 (impacket) | Security 4624 | NTLM network logon, `Key_Length=0`, NtLmSsp |
-| 5 | Scheduled Task | [T1053.005](https://attack.mitre.org/techniques/T1053/005/) | WS01 | Sysmon 1 + Security 4698 | `schtasks /create` + task registration |
-| 6 | Account Discovery | [T1087.002](https://attack.mitre.org/techniques/T1087/002/) | WS01 | Sysmon 1 | Burst of `net`/AD recon commands |
+| 4 | Pass-the-Hash | [T1550.002](https://attack.mitre.org/techniques/T1550/002/) | SPLUNK01 (impacket) | Security 4624 | Possible pass-the-hash signal: NTLM network logon (type 3, `NtLmSsp`) |
+| 5 | Scheduled Task | [T1053.005](https://attack.mitre.org/techniques/T1053/005/) | WS01 | Security 4688 | `schtasks /create` or `Register-ScheduledTask` in the command line |
+| 6 | Account Discovery | [T1087.002](https://attack.mitre.org/techniques/T1087/002/) | WS01 | Security 4688 | Two or more distinct AD discovery command lines per host/account in the search range |
 
 ---
 
 ## What this demonstrates
 
 - **Detection engineering end to end** — generate the attack telemetry, understand the event that proves it, write the search, tune out the noise, validate against ground truth.
-- **Reading AD telemetry the way a SOC analyst does** — 4769 encryption types, 4662 replication GUIDs, NTLM logon tells, Sysmon command-line context.
+- **Reading AD telemetry the way a SOC analyst does** — 4769 encryption types, 4662 replication GUIDs, NTLM logon context, 4688 command-line telemetry.
 - **Mapping to MITRE ATT&CK** so detections are measured against a real adversary framework.
 - **Building infrastructure** — unattended VM provisioning, a domain, a SIEM pipeline — reproducibly from scripts.
 
