@@ -32,9 +32,23 @@ Full search + captured results for every one are in [`../evidence/`](../evidence
 | Comparison | Event fields | What the search tells you |
 |---|---|---|
 | Captured hash-only SMB test | 4624, type 3, NTLM, `NtLmSsp`; `Administrator` on WS01 from SPLUNK01 | Matched. The test command establishes the hash-only method. |
-| Example of a legitimate password-based SMB login that falls back to NTLM (illustrative) | Same event ID, type, authentication package, and process with a named user | Would also match. The fields alone leave the credential method unverified. |
+| Captured benign password-based SMB test | 4624, type 3, NTLM, `NtLmSsp`; `jsmith` on WS01 from DC01 | Matched. The password prompt establishes the credential method for this test. |
 
-To reproduce the comparison, use a known test account and a separate SMB session with a password in the isolated lab. Confirm the expected 4624 fields in Splunk. During triage, compare the account, source and destination with approved admin activity, then correlate SMB share or endpoint process activity if available.
+### Benign comparison run
+
+On DC01, a Command Prompt session opened an SMB connection to WS01 with the standard lab account `SOCLAB\jsmith`. The asterisk prompts for the password without placing it in the command line.
+
+```cmd
+net use \\10.10.10.20\IPC$ /user:SOCLAB\jsmith *
+```
+
+Splunk indexed WS01 Security Event **4624**, record **5240**, at **2026-11-08 10:41:37.337 UTC**. It showed logon type **3**, authentication package **NTLM**, logon process **NtLmSsp**, key length **128**, and source **DC01 (10.10.10.10)**.
+
+The [existing SPL](../detections/04-pass-the-hash.spl) returned one match for `jsmith` on WS01 in the **10:40:37–10:42:38 UTC** window. The search below adds time bounds and filters the output to that account and host after aggregation.
+
+![Splunk results showing one NTLM detection match for jsmith from DC01 to WS01](../evidence/screenshots/benign-ntlm-splunk.jpg)
+
+Both captured cases match the rule. During triage, check whether the account, source, destination and time fit approved activity. Correlate with SMB share or endpoint process activity if available before deciding whether to escalate.
 
 ## 5. Scheduled Task — T1053.005
 **Run (WS01, as `jsmith`):** `schtasks /create /tn ATOMIC-T1053 …`.

@@ -29,7 +29,7 @@ All three run on an isolated VirtualBox NAT network (`10.10.10.0/24`). Logging p
 
 ## Techniques executed & detected
 
-The lab walkthrough links each attack to its telemetry and Splunk search. See the [walkthrough](docs/walkthrough.md), [captured search results](evidence/), and [SPL](detections/).
+The lab walkthrough links each attack to its telemetry and Splunk search. See the [walkthrough](docs/walkthrough.md), [captured search results](evidence/), and [SPL](detections/). The [benign NTLM comparison](docs/walkthrough.md#benign-comparison-run) shows why the pass-the-hash signal needs more context before escalation.
 
 | # | Technique | ATT&CK ID | Run from | Primary data source | Detection logic |
 |---|-----------|-----------|----------|--------------------|-----------------|
