@@ -48,7 +48,20 @@ The [existing SPL](../detections/04-pass-the-hash.spl) returned one match for `j
 
 ![Splunk results showing one NTLM detection match for jsmith from DC01 to WS01](../evidence/screenshots/benign-ntlm-splunk.jpg)
 
-Both captured cases match the rule. During triage, check whether the account, source, destination and time fit approved activity. Correlate with SMB share or endpoint process activity if available before deciding whether to escalate.
+Both captured cases match the broad hunt. During triage, check whether the account, source, destination and time fit approved activity. Correlate with SMB share or endpoint process activity if available before deciding whether to escalate.
+
+### Tuning replay
+
+A [narrower lab alert](../detections/04b-unexpected-privileged-ntlm.spl) looks for the lab Administrator account using NTLM on WS01 from a known source other than DC01. DC01 is the expected admin origin for this exercise. The existing hunt remains available for events outside that scope.
+
+Both searches used the same Splunk window on **2026-11-08, 07:26:00–10:43:00 UTC** (`earliest=1794122760 latest=1794134580`). The broad comparison isolated the two known account and source pairs. The tuned alert ran without an additional output filter and returned one result.
+
+| Captured test | Event time (UTC) | Broad hunt | Tuned alert |
+|---|---|---|---|
+| Hash-only SMB, Administrator from SPLUNK01 (10.10.10.30) to WS01 | 07:27:28.445 | Matched | Matched |
+| Password-based SMB, jsmith from DC01 (10.10.10.10) to WS01 | 10:41:37.337 | Matched | Filtered |
+
+This validates the distinction for these two events. An attacker using DC01, another account, or a different destination could fall outside the tuned alert. For an enterprise deployment, use verified privileged-account and expected-source baselines for each destination.
 
 ## 5. Scheduled Task — T1053.005
 **Run (WS01, as `jsmith`):** `schtasks /create /tn ATOMIC-T1053 …`.

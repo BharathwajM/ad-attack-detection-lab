@@ -1,0 +1,12 @@
+``` Lab alert: privileged NTLM from an unexpected source
+    Scope: WS01, the lab Administrator account, and DC01 as the expected admin source.
+    Keep 04-pass-the-hash.spl for broader hunting. This alert needs a local baseline
+    for privileged accounts, approved origins and destinations before deployment. ```
+index=winlogs source="WinEventLog:Security" EventCode=4624
+    ComputerName="WS01.soclab.local"
+    Logon_Type=3 Authentication_Package=NTLM Logon_Process=NtLmSsp
+| eval target=mvindex(Account_Name,-1), src_ip=Source_Network_Address
+| where lower(target)="administrator" AND isnotnull(src_ip) AND src_ip!="" AND src_ip!="-" AND src_ip!="10.10.10.10"
+| stats count min(_time) as first_seen max(_time) as last_seen by target ComputerName src_ip
+| convert ctime(first_seen) ctime(last_seen)
+| sort - count
