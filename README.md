@@ -29,7 +29,7 @@ All three run on an isolated VirtualBox NAT network (`10.10.10.0/24`). Logging p
 
 ## Techniques executed & detected
 
-The lab walkthrough links each attack to its telemetry and Splunk search. See the [walkthrough](docs/walkthrough.md), [captured search results](evidence/), and [SPL](detections/). The [benign NTLM comparison](docs/walkthrough.md#benign-comparison-run) shows why the pass-the-hash signal needs more context before escalation.
+The lab walkthrough links each attack to its telemetry and Splunk search. See the [walkthrough](docs/walkthrough.md), [captured search results](evidence/), and [SPL](detections/). The [NTLM tuning replay](docs/walkthrough.md#tuning-replay) compares three captured lab cases. The broad hunt surfaced the hash-only test, the benign standard-user login and the approved Administrator logins from DC01. The tuned alert kept the hash-only test and filtered both benign cases.
 
 | # | Technique | ATT&CK ID | Run from | Primary data source | Detection logic |
 |---|-----------|-----------|----------|--------------------|-----------------|
