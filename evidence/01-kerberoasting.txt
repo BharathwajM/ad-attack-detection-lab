@@ -1,0 +1,31 @@
+# Detection evidence: 01-kerberoasting
+# Captured: 2026-11-08 18:40:19Z
+
+## Search (SPL)
+``` Detection: Kerberoasting (MITRE ATT&CK T1558.003)
+    Data: Windows Security Event 4769 (Kerberos service ticket requested), forwarded from DC01.
+    Logic: a service ticket issued with RC4 (Ticket_Encryption_Type 0x17) for a *user* service
+    account (an account with an SPN - Service_Name is not a machine $ and not krbtgt). Modern AD
+    issues AES (0x12), so an RC4 service ticket is the classic Kerberoasting tell: roasting tools
+    request the weak cipher so the extracted hash can be cracked offline. The requesting account and
+    its source are grouped so one analyst view shows who roasted what. A fan-out across many SPNs
+    from one requestor (dc(Service_Name)) raises confidence further. ```
+index=winlogs source="WinEventLog:Security" EventCode=4769
+    Ticket_Encryption_Type=0x17
+    Service_Name!="*$"
+    Service_Name!="krbtgt"
+    Account_Name!="*$"
+| eval requestor=mvindex(split(Account_Name,"@"),0)
+| stats count as rc4_ticket_requests
+        dc(Service_Name) as distinct_spns
+        values(Service_Name) as service_accounts
+        min(_time) as first_seen max(_time) as last_seen
+        by requestor, Client_Address
+| convert ctime(first_seen) ctime(last_seen)
+| sort - rc4_ticket_requests
+
+
+## Results
+requestor   Client_Address   rc4_ticket_requests distinct_spns service_accounts       first_seen               last_seen
+--------- ------------------ ------------------- ------------- ---------------- ----------------------- -----------------------
+jsmith    ::ffff:10.10.10.20                   3             1 svc_sql          11/08/2026 07:26:10.752 11/08/2026 07:37:15.389

@@ -1,0 +1,19 @@
+``` Detection: Scheduled Task / Job (MITRE ATT&CK T1053.005)
+    Data: Windows Security Event 4688 (process creation, with command line), forwarded from WS01/DC01.
+    Requires "Audit Process Creation" + ProcessCreationIncludeCmdLine. Sysmon EventCode 1 (schtasks.exe)
+    and Security 4698 (task registered, needs Object Access auditing) are equivalent secondary sources.
+    Logic: creation of a scheduled task from the command line - schtasks.exe with /create, or a
+    PowerShell Register-ScheduledTask. Scheduled tasks are a classic persistence / execution mechanism,
+    and the command line captures the task name and the action it will run. ```
+index=winlogs source="WinEventLog:Security" EventCode=4688
+    ((Process_Command_Line="*schtasks*" AND Process_Command_Line="*/create*")
+     OR Process_Command_Line="*Register-ScheduledTask*")
+| rex field=Process_Command_Line "(?i)/tn\s+\"?(?<task_name>[^\"\s]+)"
+| stats values(Process_Command_Line) as command
+        values(task_name) as task_name
+        count
+        min(_time) as first_seen max(_time) as last_seen
+        by host, Account_Name
+| convert ctime(first_seen) ctime(last_seen)
+| sort - count
+

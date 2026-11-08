@@ -1,0 +1,52 @@
+# Detection evidence: 06-account-discovery
+# Captured: 2026-11-08 18:40:22Z
+
+## Search (SPL)
+``` Detection: Account Discovery - Domain Account (MITRE ATT&CK T1087.002)
+    Data: Windows Security Event 4688 (process creation, with command line), forwarded from WS01/DC01.
+    Requires "Audit Process Creation" + ProcessCreationIncludeCmdLine (set in 06-dc-populate.ps1 on the
+    DC and on WS01 at build time). Sysmon EventCode 1 is an equivalent secondary source.
+    Logic: built-in recon enumerating domain accounts/groups - net user /domain, net group /domain,
+    net accounts /domain, nltest /dclist, or the AD PowerShell cmdlets. A single command is normal
+    admin work; a burst of several DISTINCT discovery commands from one host/user is the behaviour to
+    alert on. ```
+index=winlogs source="WinEventLog:Security" EventCode=4688
+    (Process_Command_Line="*net* user /domain*" OR Process_Command_Line="*net* group*/domain*"
+     OR Process_Command_Line="*net* accounts /domain*" OR Process_Command_Line="*nltest*/dclist*"
+     OR Process_Command_Line="*Get-ADUser*" OR Process_Command_Line="*Get-ADGroupMember*")
+| stats values(Process_Command_Line) as commands
+        dc(Process_Command_Line) as distinct_commands
+        count as executions
+        min(_time) as first_seen max(_time) as last_seen
+        by host, Account_Name
+| where distinct_commands >= 2
+| convert ctime(first_seen) ctime(last_seen)
+| sort - distinct_commands
+
+
+
+## Results
+
+
+host Account_Name                               commands                               distinct_commands executions       first_seen               last_seen
+---- ------------ -------------------------------------------------------------------- ----------------- ---------- ----------------------- -----------------------
+WS01 -            "C:\WINDOWS\system32\cmd.exe" /c "net accounts /domain"                             10         10 11/08/2026 07:37:15.086 11/08/2026 07:37:15.247
+                  "C:\WINDOWS\system32\cmd.exe" /c "net group "Domain Admins" /domain"                                                      
+                  "C:\WINDOWS\system32\cmd.exe" /c "net user /domain"                                                                       
+                  "C:\WINDOWS\system32\nltest.exe" /dclist:soclab.local                                                                     
+                  C:\WINDOWS\system32\net1  accounts /domain                                                                                
+                  C:\WINDOWS\system32\net1  group "Domain Admins" /domain                                                                   
+                  C:\WINDOWS\system32\net1  user /domain                                                                                    
+                  net  accounts /domain                                                                                                     
+                  net  group "Domain Admins" /domain                                                                                        
+                  net  user /domain                                                                                                         
+WS01 jsmith       "C:\WINDOWS\system32\cmd.exe" /c "net accounts /domain"                             10         10 11/08/2026 07:37:15.086 11/08/2026 07:37:15.247
+                  "C:\WINDOWS\system32\cmd.exe" /c "net group "Domain Admins" /domain"                                                      
+                  "C:\WINDOWS\system32\cmd.exe" /c "net user /domain"                                                                       
+                  "C:\WINDOWS\system32\nltest.exe" /dclist:soclab.local                                                                     
+                  C:\WINDOWS\system32\net1  accounts /domain                                                                                
+                  C:\WINDOWS\system32\net1  group "Domain Admins" /domain                                                                   
+                  C:\WINDOWS\system32\net1  user /domain                                                                                    
+                  net  accounts /domain                                                                                                     
+                  net  group "Domain Admins" /domain                                                                                        
+                  net  user /domain                                                                                                         

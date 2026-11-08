@@ -1,0 +1,21 @@
+``` Detection: Account Discovery - Domain Account (MITRE ATT&CK T1087.002)
+    Data: Windows Security Event 4688 (process creation, with command line), forwarded from WS01/DC01.
+    Requires "Audit Process Creation" + ProcessCreationIncludeCmdLine (set in 06-dc-populate.ps1 on the
+    DC and on WS01 at build time). Sysmon EventCode 1 is an equivalent secondary source.
+    Logic: built-in recon enumerating domain accounts/groups - net user /domain, net group /domain,
+    net accounts /domain, nltest /dclist, or the AD PowerShell cmdlets. A single command is normal
+    admin work; a burst of several DISTINCT discovery commands from one host/user is the behaviour to
+    alert on. ```
+index=winlogs source="WinEventLog:Security" EventCode=4688
+    (Process_Command_Line="*net* user /domain*" OR Process_Command_Line="*net* group*/domain*"
+     OR Process_Command_Line="*net* accounts /domain*" OR Process_Command_Line="*nltest*/dclist*"
+     OR Process_Command_Line="*Get-ADUser*" OR Process_Command_Line="*Get-ADGroupMember*")
+| stats values(Process_Command_Line) as commands
+        dc(Process_Command_Line) as distinct_commands
+        count as executions
+        min(_time) as first_seen max(_time) as last_seen
+        by host, Account_Name
+| where distinct_commands >= 2
+| convert ctime(first_seen) ctime(last_seen)
+| sort - distinct_commands
+

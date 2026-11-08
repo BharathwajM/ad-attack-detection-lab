@@ -1,0 +1,7 @@
+*.local.txt
+*.iso
+*.vdi
+.ssh/
+*.log
+lab-credentials*
+

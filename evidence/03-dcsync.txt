@@ -1,0 +1,28 @@
+# Detection evidence: 03-dcsync
+# Captured: 2026-11-08 18:40:20Z
+
+## Search (SPL)
+``` Detection: DCSync (MITRE ATT&CK T1003.006)
+    Data: Windows Security Event 4662 (operation on a directory-service object), forwarded from DC01.
+    Requires "Audit Directory Service Access" (set in 06-dc-populate.ps1).
+    Logic: an account exercising the replication extended rights that DCSync abuses -
+      DS-Replication-Get-Changes          1131f6aa-9c07-11d1-f79f-00c04fc2dcd2
+      DS-Replication-Get-Changes-All      1131f6ad-9c07-11d1-f79f-00c04fc2dcd2
+    The GUID lives in the event body (the extracted Properties field only says "Control Access"),
+    so we match it as a full-text term. Legitimate replication comes only from domain-controller
+    machine accounts, so any NON-$ account (here the Administrator used by secretsdump) is the signal. ```
+index=winlogs source="WinEventLog:Security" EventCode=4662
+    (TERM(1131f6aa-9c07-11d1-f79f-00c04fc2dcd2) OR TERM(1131f6ad-9c07-11d1-f79f-00c04fc2dcd2))
+    Account_Name!="*$"
+| stats count
+        values(Access_Mask) as access_mask
+        min(_time) as first_seen max(_time) as last_seen
+        by Account_Name, ComputerName
+| convert ctime(first_seen) ctime(last_seen)
+| sort - count
+
+
+## Results
+Account_Name    ComputerName    count access_mask       first_seen               last_seen
+------------- ----------------- ----- ----------- ----------------------- -----------------------
+Administrator DC01.soclab.local   102 0x100       11/08/2026 07:19:58.071 11/08/2026 07:27:30.710
