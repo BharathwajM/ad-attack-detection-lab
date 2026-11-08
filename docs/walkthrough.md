@@ -54,14 +54,17 @@ Both captured cases match the broad hunt. During triage, check whether the accou
 
 A [narrower lab alert](../detections/04b-unexpected-privileged-ntlm.spl) looks for the lab Administrator account using NTLM on WS01 from a known source other than DC01. DC01 is the expected admin origin for this exercise. The existing hunt remains available for events outside that scope.
 
-Both searches used the same Splunk window on **2026-11-08, 07:26:00–10:43:00 UTC** (`earliest=1794122760 latest=1794134580`). The broad comparison isolated the two known account and source pairs. The tuned alert ran without an additional output filter and returned one result.
+The approved-source control used the same privileged account as the hash-only test. From DC01, a session running as `SOCLAB\Administrator` opened WS01's `IPC$` share with its current credentials. `Get-SmbConnection` confirmed the Administrator session. WS01 recorded Security **4624** (type **3**, **NTLM**, **NtLmSsp**) for source **10.10.10.10** in records **15053** and **15055**.
+
+Both searches used **2026-11-08, 07:26:00–11:16:00 UTC** (`earliest=1794122760 latest=1794136560`). The broad output was limited to WS01 and the two test accounts. It returned three events in the Administrator row and one in the jsmith row. The tuned alert returned only the hash-only test, with no output filter.
 
 | Captured test | Event time (UTC) | Broad hunt | Tuned alert |
 |---|---|---|---|
 | Hash-only SMB, Administrator from SPLUNK01 (10.10.10.30) to WS01 | 07:27:28.445 | Matched | Matched |
 | Password-based SMB, jsmith from DC01 (10.10.10.10) to WS01 | 10:41:37.337 | Matched | Filtered |
+| Approved SMB, Administrator from DC01 (10.10.10.10) to WS01 | 11:14:12.881 and 11:14:43.233 | Matched both | Filtered both |
 
-This validates the distinction for these two events. An attacker using DC01, another account, or a different destination could fall outside the tuned alert. For an enterprise deployment, use verified privileged-account and expected-source baselines for each destination.
+The approved Administrator control holds the account and destination constant across the privileged cases and validates the lab's expected-source filter. An attacker using DC01, another account, or a different destination could fall outside the tuned alert. For an enterprise deployment, use verified privileged-account and expected-source baselines for each destination.
 
 ## 5. Scheduled Task — T1053.005
 **Run (WS01, as `jsmith`):** `schtasks /create /tn ATOMIC-T1053 …`.

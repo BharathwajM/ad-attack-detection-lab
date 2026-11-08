@@ -10,7 +10,7 @@ explaining the data source and the detection logic.
 | [`02-password-spraying.spl`](02-password-spraying.spl) | T1110.003 | Security 4625 | one source → **≥5 distinct accounts** in a 10-minute window |
 | [`03-dcsync.spl`](03-dcsync.spl) | T1003.006 | Security 4662 | replication extended-right GUIDs exercised by a **non-DC** account |
 | [`04-pass-the-hash.spl`](04-pass-the-hash.spl) | T1550.002 | Security 4624 | non-machine account over **NTLM** network logon (`NtLmSsp`, type 3), possible pass-the-hash |
-| [`04b-unexpected-privileged-ntlm.spl`](04b-unexpected-privileged-ntlm.spl) | T1550.002 | Security 4624 | lab Administrator NTLM on WS01 from an unexpected IP; [replayed on two captured tests](../docs/walkthrough.md#tuning-replay) |
+| [`04b-unexpected-privileged-ntlm.spl`](04b-unexpected-privileged-ntlm.spl) | T1550.002 | Security 4624 | lab Administrator NTLM on WS01 from an unexpected IP; [replayed on three captured test cases](../docs/walkthrough.md#tuning-replay) |
 | [`05-scheduled-task.spl`](05-scheduled-task.spl) | T1053.005 | Security 4688 | `schtasks /create` or `Register-ScheduledTask` in the command line |
 | [`06-account-discovery.spl`](06-account-discovery.spl) | T1087.002 | Security 4688 | two or more distinct AD discovery command lines per host/account in the search range |
 
