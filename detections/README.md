@@ -23,6 +23,6 @@ explaining the data source and the detection logic.
   as just `Control Access`, so the replication GUID is matched as a full-text `TERM()` instead.
 - **Modern Kerberos defaults to AES**, so a single RC4 service ticket is a high-signal Kerberoast
   indicator; the lab's `svc_sql` account is pinned to RC4 to model a legacy service account.
-- **The pass-the-hash emulation showed `Key_Length=128`.** The search has no key-length or group-membership filter. See the [NTLM comparison](../docs/walkthrough.md#4-possible-pass-the-hash--t1550002) for what a match means.
+- **The pass-the-hash emulation showed `Key_Length=128`.** The search has no key-length or group-membership filter. See the [NTLM comparison](../docs/walkthrough.md#4-possible-pass-the-hash-t1550002) for what a match means.
 
 These are ad hoc lab searches. Before scheduling an alert, set a lookback and baseline legitimate activity for that environment.

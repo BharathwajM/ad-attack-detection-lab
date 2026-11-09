@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 410" width="860" height="410" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="blue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#0969da"/></marker>
+    <marker id="red" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#cf222e"/></marker>
+  </defs>
+  <rect x="1" y="1" width="858" height="408" rx="10" fill="#ffffff" stroke="#d0d7de"/>
+  <text x="24" y="32" font-size="15" font-weight="600" fill="#1f2328">soclab.local on a VirtualBox NAT network (10.10.10.0/24)</text>
+
+  <line x1="600" y1="27" x2="640" y2="27" stroke="#0969da" stroke-width="2.5" marker-end="url(#blue)"/>
+  <text x="648" y="32" font-size="12.5" fill="#57606a">log flow</text>
+  <line x1="720" y1="27" x2="760" y2="27" stroke="#cf222e" stroke-width="2.5" stroke-dasharray="6 4" marker-end="url(#red)"/>
+  <text x="768" y="32" font-size="12.5" fill="#57606a">attack</text>
+
+  <!-- log flow -->
+  <path d="M272 120 L586 178" stroke="#0969da" stroke-width="2.5" fill="none" marker-end="url(#blue)"/>
+  <path d="M272 290 L586 236" stroke="#0969da" stroke-width="2.5" fill="none" marker-end="url(#blue)"/>
+  <text x="420" y="204" font-size="12.5" fill="#0969da" text-anchor="middle">Security + Sysmon logs</text>
+  <text x="420" y="220" font-size="12.5" fill="#0969da" text-anchor="middle">Universal Forwarder, TCP 9997</text>
+
+  <!-- attacks -->
+  <path d="M155 232 L155 186" stroke="#cf222e" stroke-width="2.5" stroke-dasharray="6 4" fill="none" marker-end="url(#red)"/>
+  <text x="166" y="206" font-size="12" fill="#cf222e">Kerberoasting, spraying,</text>
+  <text x="166" y="221" font-size="12" fill="#cf222e">discovery (as jsmith)</text>
+  <path d="M700 148 C700 62, 420 60, 274 96" stroke="#cf222e" stroke-width="2.5" stroke-dasharray="6 4" fill="none" marker-end="url(#red)"/>
+  <text x="470" y="57" font-size="12.5" fill="#cf222e" text-anchor="middle">DCSync (secretsdump.py)</text>
+  <path d="M700 262 C700 380, 420 384, 274 322" stroke="#cf222e" stroke-width="2.5" stroke-dasharray="6 4" fill="none" marker-end="url(#red)"/>
+  <text x="470" y="388" font-size="12.5" fill="#cf222e" text-anchor="middle">Pass-the-hash (smbclient.py -hashes)</text>
+
+  <!-- hosts -->
+  <g>
+    <rect x="40" y="70" width="230" height="114" rx="8" fill="#f6f8fa" stroke="#8c959f" stroke-width="1.5"/>
+    <text x="56" y="96" font-size="15" font-weight="700" fill="#1f2328">DC01</text>
+    <text x="56" y="117" font-size="12.5" fill="#1f2328">Windows Server 2025</text>
+    <text x="56" y="136" font-size="12.5" fill="#57606a">Domain controller, 10.10.10.10</text>
+    <text x="56" y="155" font-size="12.5" fill="#57606a">Sysmon, Universal Forwarder</text>
+    <text x="56" y="174" font-size="12.5" fill="#57606a">Kerberos, NTLM, DS audit</text>
+  </g>
+  <g>
+    <rect x="40" y="234" width="230" height="114" rx="8" fill="#f6f8fa" stroke="#8c959f" stroke-width="1.5"/>
+    <text x="56" y="260" font-size="15" font-weight="700" fill="#1f2328">WS01</text>
+    <text x="56" y="281" font-size="12.5" fill="#1f2328">Windows 11 Enterprise</text>
+    <text x="56" y="300" font-size="12.5" fill="#57606a">Workstation, 10.10.10.20</text>
+    <text x="56" y="319" font-size="12.5" fill="#57606a">Sysmon, Universal Forwarder</text>
+    <text x="56" y="338" font-size="12.5" fill="#57606a">Attacker foothold, sched. task</text>
+  </g>
+  <g>
+    <rect x="588" y="150" width="230" height="110" rx="8" fill="#f6f8fa" stroke="#8c959f" stroke-width="1.5"/>
+    <text x="604" y="176" font-size="15" font-weight="700" fill="#1f2328">SPLUNK01</text>
+    <text x="604" y="197" font-size="12.5" fill="#1f2328">Ubuntu 24.04</text>
+    <text x="604" y="216" font-size="12.5" fill="#57606a">Splunk Enterprise, 10.10.10.30</text>
+    <text x="604" y="235" font-size="12.5" fill="#57606a">index=winlogs</text>
+    <text x="604" y="254" font-size="12.5" fill="#57606a">impacket attacker tools</text>
+  </g>
+</svg>

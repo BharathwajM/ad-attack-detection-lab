@@ -5,25 +5,25 @@ Full search + captured results for every one are in [`../evidence/`](../evidence
 
 ---
 
-## 1. Kerberoasting — T1558.003
+## 1. Kerberoasting (T1558.003)
 **Run (WS01, as domain user `jsmith`):** requested a Kerberos service ticket for the `MSSQLSvc/dc01` SPN via a pure-.NET `KerberosRequestorSecurityToken`. The target account `svc_sql` is pinned to RC4, modelling a legacy service account.
 **Telemetry:** Security **4769** on DC01 with `Ticket_Encryption_Type=0x17` (RC4).
 **Detection fired:** `jsmith` from `10.10.10.20` → 3 RC4 service-ticket requests for `svc_sql`.
 **Why it works:** modern AD issues AES (`0x12`); an RC4 service ticket for a user account is the roasting tell.
 
-## 2. Password Spraying — T1110.003
+## 2. Password Spraying (T1110.003)
 **Run (WS01):** one wrong password tried across all ten domain users via `net use \\dc01\IPC$`.
 **Telemetry:** Security **4625** (failed logon), many accounts from one source in a short window.
 **Detection fired:** WS01 source → ≥5 distinct accounts failing in a 10-minute bucket.
-**Why it works:** spraying is wide-and-shallow — the fan-out across accounts is the inverse of brute force.
+**Why it works:** spraying is wide and shallow. One password across many accounts is the opposite pattern to brute force.
 
-## 3. DCSync — T1003.006
+## 3. DCSync (T1003.006)
 **Run (SPLUNK01, impacket):** `secretsdump.py -just-dc` replicated the directory and dumped every account hash (incl. `krbtgt`, domain `Administrator`).
 **Telemetry:** Security **4662** on DC01 exercising the replication GUIDs (`1131f6aa…` / `1131f6ad…`).
 **Detection fired:** `Administrator` → 102 replication accesses from a non-DC account.
 **Why it works:** only domain-controller machine accounts legitimately replicate; a user doing it is DCSync.
 
-## 4. Possible pass-the-hash — T1550.002
+## 4. Possible pass-the-hash (T1550.002)
 **Run (SPLUNK01, impacket):** authenticated to WS01 over SMB using **only** the recovered `Administrator` NT hash (`smbclient.py -hashes`).
 **Telemetry:** Security **4624** Logon Type 3, `Authentication_Package=NTLM`, `Logon_Process=NtLmSsp`.
 **Detection fired:** `Administrator` arriving over NTLM network logon from the attacker host.
@@ -66,13 +66,13 @@ Both searches used **2026-11-08, 07:26:00–11:16:00 UTC** (`earliest=1794122760
 
 The approved Administrator control holds the account and destination constant across the privileged cases and validates the lab's expected-source filter. An attacker using DC01, another account, or a different destination could fall outside the tuned alert. For an enterprise deployment, use verified privileged-account and expected-source baselines for each destination.
 
-## 5. Scheduled Task — T1053.005
+## 5. Scheduled Task (T1053.005)
 **Run (WS01, as `jsmith`):** `schtasks /create /tn ATOMIC-T1053 …`.
 **Telemetry:** Security **4688** (process creation with command line) for `schtasks.exe /create`.
 **Detection fired:** WS01 / `jsmith` created task `ATOMIC-T1053`.
-**Why it works:** the command line captures the task name and the action it will run — a classic persistence/execution signal.
+**Why it works:** the command line captures the task name and the action it will run, which is a common persistence and execution signal.
 
-## 6. Account Discovery — T1087.002
+## 6. Account Discovery (T1087.002)
 **Run (WS01, as `jsmith`):** `net user /domain`, `net group "Domain Admins" /domain`, `net accounts /domain`, `nltest /dclist`.
 **Telemetry:** Security **4688** for `net.exe` / `net1.exe` / `nltest.exe` with their command lines.
 **Detection fired:** WS01 / `jsmith` → 10 distinct discovery commands in the same second.
@@ -82,7 +82,7 @@ The approved Administrator control holds the account and destination constant ac
 
 ## Detection-engineering notes (what I had to tune)
 
-Building the detections surfaced real tuning work, not just copy-paste rules:
+Getting the detections to work on this lab's data took some fixing:
 
 - **Sysmon as XML had no extracted fields.** With `renderXml=1` the forwarder shipped raw XML, so `CommandLine`/`Image` never extracted and the process-creation detections were blind. I moved the process-creation detections to **Security 4688 with command-line auditing** (reliable, no add-on) and switched the forwarder to the classic format.
 - **The DCSync GUID isn't a clean field.** Splunk extracts `Properties` on 4662 as just `Control Access`; the replication GUID lives in the event body, matched with `TERM()`.

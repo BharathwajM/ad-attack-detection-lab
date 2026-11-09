@@ -1,56 +1,61 @@
 # Active Directory Attack & Detection Lab
 
-A self-contained Active Directory lab built to **run real attacker techniques and then detect them in Splunk**. I built the domain, generated the telemetry (Windows Security events + Sysmon), executed six MITRE ATT&CK techniques, and wrote and validated a Splunk detection for each one against the logs they produced.
+I built a small Windows domain in VirtualBox, ran six MITRE ATT&CK techniques against it, and wrote a Splunk search for each one. Every search was tested against the logs its attack produced, and the captured results are in [`evidence/`](evidence/).
 
-This is the companion to my [SOC monitoring lab](https://github.com/BharathwajM/soc-portfolio-lab) (Microsoft Sentinel, honeypot, Defender for Endpoint). That project was cloud detection-as-a-service; this one is **the endpoint/identity layer** — the host and domain-controller telemetry a SOC analyst actually triages, and the detection engineering behind it.
+My [SOC monitoring lab](https://github.com/BharathwajM/soc-portfolio-lab) covers cloud detection in Microsoft Sentinel. This lab covers on-premises identity and endpoint logs in Splunk, which is where most AD attacks show up.
 
----
+![Lab layout: DC01 and WS01 forward logs to SPLUNK01; attacks run from WS01 and SPLUNK01](docs/lab-diagram.svg)
 
-## Lab architecture
+## Lab setup
 
 | Host | OS | Role | IP |
-|------|----|----|----|
-| **DC01** | Windows Server 2025 | Domain controller — `soclab.local`, DNS, audit policy | 10.10.10.10 |
-| **WS01** | Windows 11 Enterprise | Domain-joined workstation (attacker's foothold) | 10.10.10.20 |
-| **SPLUNK01** | Ubuntu 24.04 | Splunk Enterprise SIEM + Linux attacker (impacket) | 10.10.10.30 |
+|------|----|------|----|
+| **DC01** | Windows Server 2025 | Domain controller for `soclab.local`, DNS, audit policy | 10.10.10.10 |
+| **WS01** | Windows 11 Enterprise | Domain-joined workstation, the attacker's foothold | 10.10.10.20 |
+| **SPLUNK01** | Ubuntu 24.04 | Splunk Enterprise, plus impacket as the Linux attacker | 10.10.10.30 |
 
-All three run on an isolated VirtualBox NAT network (`10.10.10.0/24`). Logging pipeline:
+All three VMs sit on an isolated VirtualBox NAT network (`10.10.10.0/24`).
 
-```
- DC01 / WS01 ──► Sysmon (sysmon-modular config)  ─┐
-             ──► Windows Security / PowerShell logs ─┼─► Splunk Universal Forwarder ─► SPLUNK01 :9997 ─► index=winlogs
-```
+- **Sysmon** runs on both Windows hosts with Olaf Hartong's [`sysmon-modular`](https://github.com/olafhartong/sysmon-modular) config.
+- **Audit policy** on the DC records Kerberos service tickets (4769), directory access (4662), logons (4624/4625) and process creation with the command line (4688).
+- **Splunk Universal Forwarder** on each Windows host sends the Security, System, Sysmon and PowerShell Operational logs to `index=winlogs` on SPLUNK01 (TCP 9997).
 
-- **Sysmon** (SwiftOnSecurity/olafhartong `sysmon-modular`) for rich process-creation, network and image-load telemetry.
-- **Audit policy** tuned on the DC so the identity attacks are visible: Kerberos service-ticket operations (4769), DS access (4662), logon (4624/4625), and process creation **with command line** (4688).
-- **Splunk Universal Forwarder** on each Windows host shipping Security, System, Sysmon and PowerShell Operational channels.
+## Techniques run and detected
 
----
+| # | Technique | ATT&CK ID | Run from | Event | What the search looks for |
+|---|-----------|-----------|----------|-------|---------------------------|
+| 1 | Kerberoasting | [T1558.003](https://attack.mitre.org/techniques/T1558/003/) | WS01 | 4769 | **RC4** service tickets (0x17) in an AES domain |
+| 2 | Password spraying | [T1110.003](https://attack.mitre.org/techniques/T1110/003/) | WS01 | 4625 | One source failing against 5+ accounts in 10 minutes |
+| 3 | DCSync | [T1003.006](https://attack.mitre.org/techniques/T1003/006/) | SPLUNK01 (impacket) | 4662 | Replication rights used by a **non-DC** account |
+| 4 | Pass-the-hash | [T1550.002](https://attack.mitre.org/techniques/T1550/002/) | SPLUNK01 (impacket) | 4624 | Hunt: NTLM network logons. Tuned alert: the Administrator account over NTLM from an unexpected source |
+| 5 | Scheduled task | [T1053.005](https://attack.mitre.org/techniques/T1053/005/) | WS01 | 4688 | `schtasks /create` or `Register-ScheduledTask` in the command line |
+| 6 | Account discovery | [T1087.002](https://attack.mitre.org/techniques/T1087/002/) | WS01 | 4688 | Two or more different AD discovery commands from one user on one host |
 
-## Techniques executed & detected
+The [walkthrough](docs/walkthrough.md) explains each attack, the event it left behind and why the search catches it. The SPL is in [`detections/`](detections/).
 
-The lab walkthrough links each attack to its telemetry and Splunk search. See the [walkthrough](docs/walkthrough.md), [captured search results](evidence/), and [SPL](detections/). The [NTLM tuning replay](docs/walkthrough.md#tuning-replay) compares three captured lab cases. The broad hunt surfaced the hash-only test, the benign standard-user login and the approved Administrator logins from DC01. The tuned alert kept the hash-only test and filtered both benign cases.
+## Tuning the pass-the-hash alert
 
-| # | Technique | ATT&CK ID | Run from | Primary data source | Detection logic |
-|---|-----------|-----------|----------|--------------------|-----------------|
-| 1 | Kerberoasting | [T1558.003](https://attack.mitre.org/techniques/T1558/003/) | WS01 | Security 4769 | **RC4** service tickets (0x17) |
-| 2 | Password Spraying | [T1110.003](https://attack.mitre.org/techniques/T1110/003/) | WS01 | Security 4625 | One source → many accounts, short window |
-| 3 | DCSync | [T1003.006](https://attack.mitre.org/techniques/T1003/006/) | SPLUNK01 (impacket) | Security 4662 | Replication rights by a **non-DC** account |
-| 4 | Pass-the-Hash | [T1550.002](https://attack.mitre.org/techniques/T1550/002/) | SPLUNK01 (impacket) | Security 4624 | Possible pass-the-hash signal: NTLM network logon (type 3, `NtLmSsp`) |
-| 5 | Scheduled Task | [T1053.005](https://attack.mitre.org/techniques/T1053/005/) | WS01 | Security 4688 | `schtasks /create` or `Register-ScheduledTask` in the command line |
-| 6 | Account Discovery | [T1087.002](https://attack.mitre.org/techniques/T1087/002/) | WS01 | Security 4688 | Two or more distinct AD discovery command lines per host/account in the search range |
+Event 4624 shows that a logon used NTLM, but not whether the client typed a password or replayed a stolen hash. So the broad NTLM search also matched normal logins. To measure that, I replayed three captured cases through the broad hunt and a tuned alert ([04b](detections/04b-unexpected-privileged-ntlm.spl)):
 
----
+| Test case | Broad hunt | Tuned alert |
+|---|---|---|
+| Hash-only login as Administrator from SPLUNK01 (the attack) | Matched | **Matched** |
+| Normal password login as jsmith from DC01 | Matched | Filtered |
+| Approved Administrator login from DC01 | Matched | Filtered |
 
-## What this demonstrates
+The tuned alert kept the attack and dropped both benign cases. Its limits are written up in the [tuning replay](docs/walkthrough.md#tuning-replay).
 
-- **Detection engineering end to end** — generate the attack telemetry, understand the event that proves it, write the search, tune out the noise, validate against ground truth.
-- **Reading AD telemetry the way a SOC analyst does** — 4769 encryption types, 4662 replication GUIDs, NTLM logon context, 4688 command-line telemetry.
-- **Mapping to MITRE ATT&CK** so detections are measured against a real adversary framework.
-- **Building infrastructure** — unattended VM provisioning, a domain, a SIEM pipeline — reproducibly from scripts.
+![Splunk: the benign jsmith NTLM logon that the broad hunt matched](evidence/screenshots/benign-ntlm-splunk.jpg)
+
+## Skills shown
+
+- Writing and testing SPL detections against real attack telemetry, then tuning out false positives
+- Reading AD security events: 4769 encryption types, 4662 replication GUIDs, NTLM logon details, 4688 command lines
+- Mapping detections to MITRE ATT&CK
+- Building the lab from scripts: unattended VM installs, DC promotion, Sysmon and forwarder rollout
 
 ## Build it yourself
 
-Everything is scripted in [`build/`](build/) (VM creation and unattended installs, DC promotion, Sysmon + forwarder deployment) and [`attacks/`](attacks/) (the technique runners). The lab passwords live in a gitignored `lab-credentials.local.txt` that each script reads — nothing secret is committed.
+Everything is scripted. [`build/`](build/) creates the VMs, promotes the DC and deploys Sysmon and the forwarder. [`attacks/`](attacks/) runs the techniques. Lab passwords are read from a gitignored `lab-credentials.local.txt`, so no secrets are committed.
 
-> Built on local VirtualBox VMs. Evaluation editions of Windows Server 2025 and Windows 11 Enterprise; all attacks were run only inside this isolated lab network.
+> Built on local VirtualBox VMs using evaluation editions of Windows Server 2025 and Windows 11 Enterprise. All attacks ran only inside this isolated lab network.
