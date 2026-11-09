@@ -33,6 +33,10 @@ All three VMs sit on an isolated VirtualBox NAT network (`10.10.10.0/24`).
 
 The [walkthrough](docs/walkthrough.md) explains each attack, the event it left behind and why the search catches it. The SPL is in [`detections/`](detections/).
 
+## Triage playbooks
+
+Each alert has a [Tier 1 triage playbook](playbooks/): what the alert means, the checks to run, pivot searches, common benign causes, when to escalate, and what to record. The [playbook index](playbooks/README.md#how-the-alerts-connect) also puts the lab's alerts on one timeline. It shows that the user `jsmith` on WS01 and the Administrator account used from 10.10.10.30 link every alert, and that DCSync was already running against the DC before the first Kerberoasting request.
+
 ## Tuning the pass-the-hash alert
 
 Event 4624 shows that a logon used NTLM, but not whether the client typed a password or replayed a stolen hash. So the broad NTLM search also matched normal logins. To measure that, I replayed three captured cases through the broad hunt and a tuned alert ([04b](detections/04b-unexpected-privileged-ntlm.spl)):
@@ -51,6 +55,7 @@ The tuned alert kept the attack and dropped both benign cases. Its limits are wr
 
 - Writing and testing SPL detections against real attack telemetry, then tuning out false positives
 - Reading AD security events: 4769 encryption types, 4662 replication GUIDs, NTLM logon details, 4688 command lines
+- Writing triage playbooks and correlating separate alerts into one timeline
 - Mapping detections to MITRE ATT&CK
 - Building the lab from scripts: unattended VM installs, DC promotion, Sysmon and forwarder rollout
 

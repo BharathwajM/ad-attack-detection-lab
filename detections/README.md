@@ -25,4 +25,6 @@ explaining the data source and the detection logic.
   indicator; the lab's `svc_sql` account is pinned to RC4 to model a legacy service account.
 - **The pass-the-hash emulation showed `Key_Length=128`.** The search has no key-length or group-membership filter. See the [NTLM comparison](../docs/walkthrough.md#4-possible-pass-the-hash-t1550002) for what a match means.
 
+Each detection has a matching [triage playbook](../playbooks/) for the analyst who receives the alert.
+
 These are ad hoc lab searches. Before scheduling an alert, set a lookback and baseline legitimate activity for that environment.
