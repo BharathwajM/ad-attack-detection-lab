@@ -59,3 +59,7 @@ The tuned alert kept the attack and dropped both benign cases. Its limits are wr
 Everything is scripted. [`build/`](build/) creates the VMs, promotes the DC and deploys Sysmon and the forwarder. [`attacks/`](attacks/) runs the techniques. Lab passwords are read from a gitignored `lab-credentials.local.txt`, so no secrets are committed.
 
 > Built on local VirtualBox VMs using evaluation editions of Windows Server 2025 and Windows 11 Enterprise. All attacks ran only inside this isolated lab network.
+
+---
+
+*Part of my security portfolio. See also: [SOC monitoring lab (Sentinel)](https://github.com/BharathwajM/soc-portfolio-lab) · [Phishing triage tool (Python)](https://github.com/BharathwajM/phishing-triage-automation) · [Essential Eight hardening lab (PowerShell)](https://github.com/BharathwajM/essential-eight-lab).*
