@@ -13,7 +13,6 @@ author: Bharathwaj Murali
 date: 2026-11-10
 tags:
     - attack.lateral-movement
-    - attack.defense-evasion
     - attack.t1550.002
 logsource:
     product: windows

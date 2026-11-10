@@ -10,6 +10,11 @@ on:
 permissions:
   contents: read
 
+# Explicit bash adds pipefail, so a failing sigma command fails the step even when piped to tee.
+defaults:
+  run:
+    shell: bash
+
 jobs:
   check-and-convert:
     runs-on: ubuntu-latest
