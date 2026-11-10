@@ -68,4 +68,4 @@ Everything is scripted. [`build/`](build/) creates the VMs, promotes the DC and 
 
 ---
 
-*Part of my security portfolio. See also: [SOC monitoring lab (Sentinel)](https://github.com/BharathwajM/soc-portfolio-lab) · [Phishing triage tool (Python)](https://github.com/BharathwajM/phishing-triage-automation) · [Essential Eight hardening lab (PowerShell)](https://github.com/BharathwajM/essential-eight-lab).*
+*Part of my security portfolio. See also: [Splunk BOTS v3 breach investigation](https://github.com/BharathwajM/splunk-bots-v3-investigation) · [SOC monitoring lab (Sentinel)](https://github.com/BharathwajM/soc-portfolio-lab) · [Phishing triage tool (Python)](https://github.com/BharathwajM/phishing-triage-automation) · [Essential Eight hardening lab (PowerShell)](https://github.com/BharathwajM/essential-eight-lab).*
