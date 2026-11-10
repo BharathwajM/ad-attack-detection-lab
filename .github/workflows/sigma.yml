@@ -24,6 +24,14 @@ jobs:
       - name: Install sigma-cli and the Splunk backend
         run: pip install sigma-cli pysigma-backend-splunk
       - name: Check rules against the Sigma specification
-        run: sigma check sigma/
+        run: sigma check --fail-on-error --fail-on-issues sigma/ | tee check.txt
       - name: Convert every rule to Splunk SPL
-        run: sigma convert --target splunk --pipeline splunk_windows sigma/
+        run: sigma convert --target splunk --pipeline splunk_windows sigma/ | tee converted.spl
+      - name: Show the results on the run summary
+        run: |
+          {
+            echo '## sigma check'
+            echo '```'; cat check.txt; echo '```'
+            echo '## Converted to Splunk SPL'
+            echo '```'; cat converted.spl; echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
