@@ -31,7 +31,7 @@ All three VMs sit on an isolated VirtualBox NAT network (`10.10.10.0/24`).
 | 5 | Scheduled task | [T1053.005](https://attack.mitre.org/techniques/T1053/005/) | WS01 | 4688 | `schtasks /create` or `Register-ScheduledTask` in the command line |
 | 6 | Account discovery | [T1087.002](https://attack.mitre.org/techniques/T1087/002/) | WS01 | 4688 | Two or more different AD discovery commands from one user on one host |
 
-The [walkthrough](docs/walkthrough.md) explains each attack, the event it left behind and why the search catches it. The SPL is in [`detections/`](detections/).
+The [walkthrough](docs/walkthrough.md) explains each attack, the event it left behind and why the search catches it. The SPL is in [`detections/`](detections/), and the same detections are in [`sigma/`](sigma/) as vendor-neutral Sigma rules, checked and converted to Splunk in CI.
 
 ## Triage playbooks
 
@@ -54,6 +54,7 @@ The tuned alert kept the attack and dropped both benign cases. Its limits are wr
 ## Skills shown
 
 - Writing and testing SPL detections against real attack telemetry, then tuning out false positives
+- Porting detections to Sigma, including correlation rules, with validation in GitHub Actions
 - Reading AD security events: 4769 encryption types, 4662 replication GUIDs, NTLM logon details, 4688 command lines
 - Writing triage playbooks and correlating separate alerts into one timeline
 - Mapping detections to MITRE ATT&CK
