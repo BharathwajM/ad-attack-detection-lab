@@ -1,0 +1,31 @@
+title: DCSync - Replication Rights Used by a Non-DC Account
+id: 48a5c0f5-6139-4287-aa81-41cc775e9752
+status: experimental
+description: |
+    An account that is not a domain controller used the directory replication rights that DCSync
+    abuses (DS-Replication-Get-Changes and DS-Replication-Get-Changes-All). Real replication comes
+    from DC machine accounts, which end in $. Needs "Audit Directory Service Access".
+    Sigma version of detections/03-dcsync.spl.
+references:
+    - https://attack.mitre.org/techniques/T1003/006/
+    - https://github.com/BharathwajM/ad-attack-detection-lab/blob/main/playbooks/03-dcsync.md
+author: Bharathwaj Murali
+date: 2026-11-10
+tags:
+    - attack.credential-access
+    - attack.t1003.006
+logsource:
+    product: windows
+    service: security
+detection:
+    selection:
+        EventID: 4662
+        Properties|contains:
+            - '1131f6aa-9c07-11d1-f79f-00c04fc2dcd2'
+            - '1131f6ad-9c07-11d1-f79f-00c04fc2dcd2'
+    filter_machine_account:
+        SubjectUserName|endswith: '$'
+    condition: selection and not filter_machine_account
+falsepositives:
+    - Entra Connect (Azure AD Connect) sync accounts, which need these rights; exclude them by name
+level: critical

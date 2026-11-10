@@ -1,0 +1,31 @@
+title: Scheduled Task Created From the Command Line
+id: 9e28cd23-f0b6-42ce-a870-3ea2676905e1
+status: experimental
+description: |
+    A scheduled task was created with schtasks /create or PowerShell Register-ScheduledTask.
+    Scheduled tasks are a common way to persist and to run code later. The command line shows
+    the task name and what it will run. Sigma version of detections/05-scheduled-task.spl.
+references:
+    - https://attack.mitre.org/techniques/T1053/005/
+    - https://github.com/BharathwajM/ad-attack-detection-lab/blob/main/playbooks/05-scheduled-task.md
+author: Bharathwaj Murali
+date: 2026-11-10
+tags:
+    - attack.execution
+    - attack.persistence
+    - attack.privilege-escalation
+    - attack.t1053.005
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    selection_schtasks:
+        CommandLine|contains|all:
+            - 'schtasks'
+            - '/create'
+    selection_powershell:
+        CommandLine|contains: 'Register-ScheduledTask'
+    condition: 1 of selection_*
+falsepositives:
+    - Software installers, management agents and admin scripts that create tasks
+level: medium

@@ -1,0 +1,37 @@
+title: Lab Administrator NTLM Logon on WS01 From an Unexpected Source
+id: 0017d866-4e3a-439b-912a-44b5a0c82524
+status: test
+description: |
+    Tuned version of the pass-the-hash hunt for this lab only. Alerts when the Administrator
+    account logs on to WS01 over NTLM from anywhere except DC01 (10.10.10.10). Replace the host,
+    account and approved source with a baseline from your own environment before using it.
+    Sigma version of detections/04b-unexpected-privileged-ntlm.spl.
+references:
+    - https://attack.mitre.org/techniques/T1550/002/
+    - https://github.com/BharathwajM/ad-attack-detection-lab/blob/main/docs/walkthrough.md#tuning-replay
+author: Bharathwaj Murali
+date: 2026-11-10
+tags:
+    - attack.lateral-movement
+    - attack.defense-evasion
+    - attack.t1550.002
+logsource:
+    product: windows
+    service: security
+detection:
+    selection:
+        EventID: 4624
+        Computer: 'WS01.soclab.local'
+        LogonType: 3
+        AuthenticationPackageName: 'NTLM'
+        LogonProcessName|startswith: 'NtLmSsp'
+        TargetUserName: 'Administrator'
+    filter_expected_source:
+        IpAddress:
+            - '10.10.10.10'
+            - '-'
+            - ''
+    condition: selection and not filter_expected_source
+falsepositives:
+    - A new admin workstation or jump host that has not been added to the approved sources
+level: high

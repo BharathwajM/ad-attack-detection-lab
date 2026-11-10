@@ -1,0 +1,57 @@
+title: Domain Account Discovery Command (Base Rule)
+id: 935ee88f-41ba-439f-8f9e-28681de785b3
+name: domain_discovery_command
+status: experimental
+description: One built-in command that lists domain users, groups or DCs. Used by the correlation rule below.
+author: Bharathwaj Murali
+date: 2026-11-10
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    selection_list:
+        CommandLine|contains:
+            - 'user /domain'
+            - 'accounts /domain'
+            - 'Get-ADUser'
+            - 'Get-ADGroupMember'
+    selection_group:
+        CommandLine|contains|all:
+            - 'group'
+            - '/domain'
+    selection_nltest:
+        CommandLine|contains|all:
+            - 'nltest'
+            - '/dclist'
+    condition: 1 of selection_*
+level: informational
+---
+title: Domain Account Discovery Burst
+id: d00cbbc8-190b-470a-a20a-9b5f1f6349dc
+status: experimental
+description: |
+    One user on one host ran 2 or more different domain discovery commands within an hour.
+    A single command is normal admin work; several in a row is typical of early reconnaissance.
+    Sigma version of detections/06-account-discovery.spl, which used the whole search range.
+references:
+    - https://attack.mitre.org/techniques/T1087/002/
+    - https://github.com/BharathwajM/ad-attack-detection-lab/blob/main/playbooks/06-account-discovery.md
+author: Bharathwaj Murali
+date: 2026-11-10
+tags:
+    - attack.discovery
+    - attack.t1087.002
+correlation:
+    type: value_count
+    rules:
+        - domain_discovery_command
+    group-by:
+        - Computer
+        - User
+    timespan: 1h
+    condition:
+        gte: 2
+        field: CommandLine
+falsepositives:
+    - Helpdesk and AD admins troubleshooting accounts
+level: low

@@ -1,0 +1,30 @@
+title: Kerberoasting - RC4 Service Ticket for a User Account
+id: be06d21e-6ec2-4f04-8dc8-6b7fd3f99c12
+status: experimental
+description: |
+    A Kerberos service ticket was issued with RC4 (0x17) for a user account with an SPN.
+    Domains that use AES issue 0x12 tickets, and roasting tools ask for RC4 so the ticket
+    can be cracked offline. Sigma version of detections/01-kerberoasting.spl.
+references:
+    - https://attack.mitre.org/techniques/T1558/003/
+    - https://github.com/BharathwajM/ad-attack-detection-lab/blob/main/playbooks/01-kerberoasting.md
+author: Bharathwaj Murali
+date: 2026-11-10
+tags:
+    - attack.credential-access
+    - attack.t1558.003
+logsource:
+    product: windows
+    service: security
+detection:
+    selection:
+        EventID: 4769
+        TicketEncryptionType: '0x17'
+    filter_machine_or_krbtgt:
+        - ServiceName|endswith: '$'
+        - ServiceName: 'krbtgt'
+        - TargetUserName|endswith: '$'
+    condition: selection and not filter_machine_or_krbtgt
+falsepositives:
+    - Legacy applications or service accounts that only support RC4
+level: high
